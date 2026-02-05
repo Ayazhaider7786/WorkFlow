@@ -202,4 +202,4 @@ WorkManagementTool/
 
 MIT
 
-Please help us improve by contribution, email me ayazhaider7786@gmail.com
+Please help us improve by contribution/sponsorship , email me ayazhaider7786@gmail.com
