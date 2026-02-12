@@ -177,7 +177,31 @@ public class ProjectService : IProjectService
                 new WorkflowStatus { Name = "Done", Order = 4, Color = "#10B981", IsCore = true, CoreType = CoreStatusType.Done, ProjectId = project.Id }
             };
             _context.WorkflowStatuses.AddRange(defaultStatuses);
+            await _context.SaveChangesAsync();
 
+            // Create Default Board
+            var defaultBoard = new Board
+            {
+                Name = "Main Board",
+                ProjectId = project.Id,
+                IsDefault = true,
+                OwnerId = null
+            };
+            _context.Boards.Add(defaultBoard);
+            await _context.SaveChangesAsync();
+
+            // Add Columns to Default Board
+            var boardColumns = new List<BoardColumn>();
+            foreach (var status in defaultStatuses)
+            {
+               boardColumns.Add(new BoardColumn
+               {
+                   BoardId = defaultBoard.Id,
+                   StatusId = status.Id,
+                   Order = status.Order
+               });
+            }
+            _context.BoardColumns.AddRange(boardColumns);
             await _context.SaveChangesAsync();
 
             await _activityLog.LogAsync(userId, "Created", "Project", project.Id,

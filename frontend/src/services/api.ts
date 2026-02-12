@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, User, Company, Project, ProjectMember, WorkItem, Sprint, FileTicket, FileTicketTransfer, WorkflowStatus, ActivityLog, Dashboard, ProjectRole, Priority, FileTicketType, FileTicketStatus, SprintStatus } from '../types';
+import type { AuthResponse, User, Company, Project, ProjectMember, WorkItem, Sprint, FileTicket, FileTicketTransfer, WorkflowStatus, ActivityLog, Dashboard, ProjectRole, Priority, FileTicketType, FileTicketStatus, SprintStatus, Attachment, Comment, Board } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:5001/api';
 
@@ -111,9 +111,9 @@ export const authApi = {
 
 // Users
 export const usersApi = {
-  getAll: (params?: { search?: string; unassigned?: boolean }) => 
+  getAll: (params?: { search?: string; unassigned?: boolean }) =>
     api.get<User[]>('/users', { params }),
-  getWithProjects: (search?: string) => 
+  getWithProjects: (search?: string) =>
     api.get<User[]>('/users/with-projects', { params: { search } }),
   getById: (id: number) => api.get<User>(`/users/${id}`),
   getMe: () => api.get<User>('/users/me'),
@@ -215,6 +215,17 @@ export const fileTicketsApi = {
     api.post<FileTicket>(`/projects/${projectId}/filetickets/${id}/receive`),
   getTransfers: (projectId: number, id: number) =>
     api.get<FileTicketTransfer[]>(`/projects/${projectId}/filetickets/${id}/transfers`),
+};
+
+// Boards
+export const boardsApi = {
+  getProjectBoards: (projectId: number) => api.get<Board[]>(`/projects/${projectId}/boards`),
+  getBoard: (projectId: number, id: number) => api.get<Board>(`/projects/${projectId}/boards/${id}`),
+  createBoard: (projectId: number, data: { name: string; isDefault: boolean }) =>
+    api.post<Board>(`/projects/${projectId}/boards`, data),
+  addColumn: (projectId: number, boardId: number, data: { statusId: number }) =>
+    api.post<Board>(`/projects/${projectId}/boards/${boardId}/columns`, data),
+  deleteBoard: (projectId: number, id: number) => api.delete(`/projects/${projectId}/boards/${id}`),
 };
 
 // Dashboard

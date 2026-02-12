@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon, FolderIcon, UsersIcon, MagnifyingGlassIcon, XMarkIcon, ArrowRightOnRectangleIcon, ClockIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, FolderIcon, UsersIcon, MagnifyingGlassIcon, XMarkIcon, ArrowRightOnRectangleIcon, ClockIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, ArrowLongRightIcon } from '@heroicons/react/24/outline';
 import { projectsApi, usersApi, activityLogsApi } from '../services/api';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,12 +8,12 @@ import { useNotification } from '../context/NotificationContext';
 import type { Project, User, ActivityLog, PaginatedResponse } from '../types';
 
 const SystemRoleLabels: Record<number, string> = { 0: 'Member', 1: 'QA', 2: 'Manager', 3: 'Admin', 4: 'Super Admin' };
-const SystemRoleColors: Record<number, string> = { 
-  0: 'bg-gray-100 text-gray-800', 
-  1: 'bg-yellow-100 text-yellow-800', 
-  2: 'bg-blue-100 text-blue-800', 
-  3: 'bg-purple-100 text-purple-800', 
-  4: 'bg-red-100 text-red-800' 
+const SystemRoleColors: Record<number, string> = {
+  0: 'bg-gray-100 text-gray-800',
+  1: 'bg-yellow-100 text-yellow-800',
+  2: 'bg-blue-100 text-blue-800',
+  3: 'bg-purple-100 text-purple-800',
+  4: 'bg-red-100 text-red-800'
 };
 
 export default function Projects() {
@@ -26,7 +26,7 @@ export default function Projects() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userFilter, setUserFilter] = useState<'all' | 'unassigned'>('all');
-  
+
   // Activity Log State
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [activityPage, setActivityPage] = useState(1);
@@ -37,7 +37,7 @@ export default function Projects() {
   const [activityUserId, setActivityUserId] = useState<string>('');
   const [activityProjectId, setActivityProjectId] = useState<string>('');
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
-  
+
   const [projectFormData, setProjectFormData] = useState({
     name: '',
     description: '',
@@ -199,7 +199,7 @@ export default function Projects() {
     }
   }, [searchQuery, userFilter, activeTab]);
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter(u =>
     u.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -251,33 +251,30 @@ export default function Projects() {
           <div className="flex gap-6 -mb-px">
             <button
               onClick={() => setActiveTab('projects')}
-              className={`py-3 text-sm font-medium border-b-2 ${
-                activeTab === 'projects'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+              className={`py-3 text-sm font-medium border-b-2 ${activeTab === 'projects'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
             >
               <FolderIcon className="h-5 w-5 inline mr-2" />
               Projects
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`py-3 text-sm font-medium border-b-2 ${
-                activeTab === 'users'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+              className={`py-3 text-sm font-medium border-b-2 ${activeTab === 'users'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
             >
               <UsersIcon className="h-5 w-5 inline mr-2" />
               Users
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`py-3 text-sm font-medium border-b-2 ${
-                activeTab === 'activity'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+              className={`py-3 text-sm font-medium border-b-2 ${activeTab === 'activity'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
             >
               <ClockIcon className="h-5 w-5 inline mr-2" />
               Activity Log
@@ -303,51 +300,77 @@ export default function Projects() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                  onClick={() => handleSelectProject(project)}
+                  className="group relative bg-white rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-slate-100 hover:shadow-[0_20px_48px_rgba(0,0,0,0.08)] hover:ring-indigo-100/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
                 >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                          <FolderIcon className="h-6 w-6 text-indigo-600" />
+                  {/* Decorative background gradient */}
+                  <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-gradient-to-br from-indigo-50 to-purple-50 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  <div className="relative flex-1">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100/50 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm">
+                          <FolderIcon className="h-6 w-6" />
                         </div>
-                        <div className="ml-4">
-                          <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                          <p className="text-sm text-gray-500">{project.key}</p>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                            {project.name}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-medium text-slate-400 font-mono tracking-wider bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                              {project.key}
+                            </span>
+                            <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${project.isActive
+                                ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/20'
+                                : 'bg-slate-100 text-slate-600 ring-1 ring-slate-500/20'
+                              }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${project.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                              {project.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    {project.description && (
-                      <p className="mt-4 text-sm text-gray-600 line-clamp-2">{project.description}</p>
+
+                    {project.description ? (
+                      <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 mb-6 ml-1">
+                        {project.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic mb-6 ml-1">No description provided.</p>
                     )}
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className={`px-2 py-1 text-xs rounded-full ${project.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {project.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                      <div className="flex gap-2">
-                        {(currentUser?.systemRole === 3 || currentUser?.systemRole === 4) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProject(project.id, project.name);
-                            }}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            Delete
-                          </button>
-                        )}
+                  </div>
+
+                  <div className="relative pt-4 border-t border-slate-50 flex items-center justify-between mt-auto">
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {(currentUser?.systemRole === 3 || currentUser?.systemRole === 4) && (
                         <button
-                          onClick={() => handleSelectProject(project)}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project.id, project.name);
+                          }}
+                          className="flex items-center gap-2 text-slate-400 hover:text-red-600 text-xs font-medium transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50 group/delete"
                         >
-                          Open →
+                          <TrashIcon className="h-4 w-4 transition-transform group-hover/delete:-rotate-12" />
+                          <span className="opacity-0 group-hover/delete:opacity-100 -ml-2 group-hover/delete:ml-0 transition-all duration-300">Delete</span>
                         </button>
-                      </div>
+                      )}
                     </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectProject(project);
+                      }}
+                      className="flex items-center gap-2 text-indigo-600 font-semibold text-sm group-hover:translate-x-1 transition-transform"
+                    >
+                      Open Project
+                      <ArrowLongRightIcon className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -444,7 +467,7 @@ export default function Projects() {
           <>
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity Log</h2>
-              
+
               {/* Filters */}
               <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -612,237 +635,241 @@ export default function Projects() {
       </div>
 
       {/* Create Project Modal */}
-      {showProjectModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowProjectModal(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Create New Project</h3>
-                <button onClick={() => setShowProjectModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+      {
+        showProjectModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowProjectModal(false)} />
+              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Create New Project</h3>
+                  <button onClick={() => setShowProjectModal(false)} className="text-gray-400 hover:text-gray-500">
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+                <form onSubmit={handleCreateProject} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Project Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={projectFormData.name}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="My Awesome Project"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Project Key <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={5}
+                      value={projectFormData.key}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, key: e.target.value.toUpperCase() })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="PRJ"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Used for ticket IDs (e.g., PRJ-1, PRJ-2)</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea
+                      rows={3}
+                      value={projectFormData.description}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Brief description of the project..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Project Manager <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={projectFormData.managerId}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, managerId: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Select a Manager or Admin</option>
+                      {managers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.firstName} {m.lastName} ({SystemRoleLabels[m.systemRole]})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">A Manager or Admin is required to manage the project</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                      <input
+                        type="date"
+                        value={projectFormData.startDate}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, startDate: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">End Date</label>
+                      <input
+                        type="date"
+                        value={projectFormData.endDate}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, endDate: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowProjectModal(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Create Project
+                    </button>
+                  </div>
+                </form>
               </div>
-              <form onSubmit={handleCreateProject} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Project Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={projectFormData.name}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="My Awesome Project"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Project Key <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={5}
-                    value={projectFormData.key}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, key: e.target.value.toUpperCase() })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="PRJ"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">Used for ticket IDs (e.g., PRJ-1, PRJ-2)</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    rows={3}
-                    value={projectFormData.description}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Brief description of the project..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Project Manager <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={projectFormData.managerId}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, managerId: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Select a Manager or Admin</option>
-                    {managers.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.firstName} {m.lastName} ({SystemRoleLabels[m.systemRole]})
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500">A Manager or Admin is required to manage the project</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input
-                      type="date"
-                      value={projectFormData.startDate}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, startDate: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">End Date</label>
-                    <input
-                      type="date"
-                      value={projectFormData.endDate}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, endDate: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowProjectModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    Create Project
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Create User Modal */}
-      {showUserModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowUserModal(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Add New User</h3>
-                <button onClick={() => setShowUserModal(false)} className="text-gray-400 hover:text-gray-500">
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+      {
+        showUserModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowUserModal(false)} />
+              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900">Add New User</h3>
+                  <button onClick={() => setShowUserModal(false)} className="text-gray-400 hover:text-gray-500">
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+                <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.firstName}
+                        onChange={(e) => setUserFormData({ ...userFormData, firstName: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.lastName}
+                        onChange={(e) => setUserFormData({ ...userFormData, lastName: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                    <input
+                      type="tel"
+                      value={userFormData.phone}
+                      onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Role <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={userFormData.role}
+                      onChange={(e) => setUserFormData({ ...userFormData, role: parseInt(e.target.value) })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value={0}>Member</option>
+                      <option value={1}>QA</option>
+                      <option value={2}>Manager</option>
+                      <option value={3}>Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Reports To</label>
+                    <select
+                      value={userFormData.managerId}
+                      onChange={(e) => setUserFormData({ ...userFormData, managerId: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">No Manager</option>
+                      {managers.map((m) => (
+                        <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowUserModal(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Add User
+                    </button>
+                  </div>
+                </form>
               </div>
-              <form onSubmit={handleCreateUser} className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={userFormData.firstName}
-                      onChange={(e) => setUserFormData({ ...userFormData, firstName: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={userFormData.lastName}
-                      onChange={(e) => setUserFormData({ ...userFormData, lastName: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={userFormData.email}
-                    onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={userFormData.password}
-                    onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <input
-                    type="tel"
-                    value={userFormData.phone}
-                    onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={userFormData.role}
-                    onChange={(e) => setUserFormData({ ...userFormData, role: parseInt(e.target.value) })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value={0}>Member</option>
-                    <option value={1}>QA</option>
-                    <option value={2}>Manager</option>
-                    <option value={3}>Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Reports To</label>
-                  <select
-                    value={userFormData.managerId}
-                    onChange={(e) => setUserFormData({ ...userFormData, managerId: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">No Manager</option>
-                    {managers.map((m) => (
-                      <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowUserModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    Add User
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

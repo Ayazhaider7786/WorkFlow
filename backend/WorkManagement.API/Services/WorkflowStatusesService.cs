@@ -96,12 +96,16 @@ public class WorkflowStatusesService : IWorkflowStatusesService
                 return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
             }
 
-            var membership = await _context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
-            
-            if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+            // Allow System Admin and Super Admin to bypass membership check
+            if (currentUser.SystemRole != SystemRole.SuperAdmin && currentUser.SystemRole != SystemRole.Admin)
             {
-                return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
+                var membership = await _context.ProjectMembers
+                    .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+                
+                if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+                {
+                    return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
+                }
             }
 
             if (await _context.WorkflowStatuses.AnyAsync(s => s.ProjectId == projectId && s.Name == dto.Name))
@@ -151,12 +155,16 @@ public class WorkflowStatusesService : IWorkflowStatusesService
                 return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
             }
 
-            var membership = await _context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
-            
-            if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+            // Allow System Admin and Super Admin to bypass membership check
+            if (currentUser.SystemRole != SystemRole.SuperAdmin && currentUser.SystemRole != SystemRole.Admin)
             {
-                return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
+                var membership = await _context.ProjectMembers
+                    .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+                
+                if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+                {
+                    return ServiceResult<WorkflowStatusDto>.Forbidden("Access denied");
+                }
             }
 
             if (status.IsCore && dto.Name != null && dto.Name != status.Name)
@@ -203,12 +211,16 @@ public class WorkflowStatusesService : IWorkflowStatusesService
                 return ServiceResult<bool>.Forbidden("Access denied");
             }
 
-            var membership = await _context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
-            
-            if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+            // Allow System Admin and Super Admin to bypass membership check
+            if (currentUser.SystemRole != SystemRole.SuperAdmin && currentUser.SystemRole != SystemRole.Admin)
             {
-                return ServiceResult<bool>.Forbidden("Access denied");
+                var membership = await _context.ProjectMembers
+                    .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+                
+                if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+                {
+                    return ServiceResult<bool>.Forbidden("Access denied");
+                }
             }
 
             var hasWorkItems = await _context.WorkItems.AnyAsync(w => w.StatusId == id);
@@ -246,12 +258,16 @@ public class WorkflowStatusesService : IWorkflowStatusesService
                 return ServiceResult<IEnumerable<WorkflowStatusDto>>.Forbidden("Access denied");
             }
 
-            var membership = await _context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
-            
-            if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+            // Allow System Admin and Super Admin to bypass membership check
+            if (currentUser.SystemRole != SystemRole.SuperAdmin && currentUser.SystemRole != SystemRole.Admin)
             {
-                return ServiceResult<IEnumerable<WorkflowStatusDto>>.Forbidden("Access denied");
+                var membership = await _context.ProjectMembers
+                    .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+                
+                if (membership == null || (membership.Role != ProjectRole.Manager && membership.Role != ProjectRole.Admin))
+                {
+                    return ServiceResult<IEnumerable<WorkflowStatusDto>>.Forbidden("Access denied");
+                }
             }
 
             var statuses = await _context.WorkflowStatuses

@@ -104,6 +104,7 @@ builder.Services.AddScoped<IFileTicketsService, FileTicketsService>();
 builder.Services.AddScoped<ISprintsService, SprintsService>();
 builder.Services.AddScoped<IWorkItemsService, WorkItemsService>();
 builder.Services.AddScoped<IWorkflowStatusesService, WorkflowStatusesService>();
+builder.Services.AddScoped<IBoardsService, BoardsService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Filters

@@ -271,3 +271,21 @@ export interface Attachment {
   uploadedByName: string;
   createdAt: string;
 }
+
+export interface BoardColumn {
+  id: number;
+  boardId: number;
+  statusId: number;
+  statusName: string;
+  order: number;
+}
+
+export interface Board {
+  id: number;
+  name: string;
+  projectId: number;
+  ownerId?: number;
+  isDefault: boolean;
+  columns: BoardColumn[];
+}
+
