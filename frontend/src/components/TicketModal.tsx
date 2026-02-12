@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { XMarkIcon, TrashIcon, ChatBubbleLeftIcon, ClockIcon, DocumentTextIcon, ArrowDownTrayIcon, LinkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, TrashIcon, ChatBubbleLeftIcon, ClockIcon, DocumentTextIcon, ArrowDownTrayIcon, LinkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
-import { workItemsApi, commentsApi, attachmentsApi, activityLogsApi, projectsApi } from '../services/api';
+import { workItemsApi, commentsApi, attachmentsApi, activityLogsApi, projectsApi, workflowStatusesApi } from '../services/api';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import RichTextEditor from './RichTextEditor';
 import FileUpload from './FileUpload';
-import type { WorkItem, Comment, Attachment, ActivityLog, ProjectMember, WorkItemType } from '../types';
+import type { WorkItem, Comment, Attachment, ActivityLog, ProjectMember, WorkflowStatus } from '../types';
 
 interface TicketModalProps {
   isOpen: boolean;
@@ -22,13 +22,13 @@ interface TicketModalProps {
 const Priority = { Low: 0, Medium: 1, High: 2, Critical: 3 };
 const WorkItemTypes = { Epic: 0, Feature: 1, Story: 2, Task: 3, Bug: 4, Subtask: 5 };
 const WorkItemTypeLabels: Record<number, string> = { 0: 'Epic', 1: 'Feature', 2: 'Story', 3: 'Task', 4: 'Bug', 5: 'Subtask' };
-const WorkItemTypeColors: Record<number, string> = { 
-  0: 'bg-purple-100 text-purple-800', 
-  1: 'bg-blue-100 text-blue-800', 
-  2: 'bg-green-100 text-green-800', 
-  3: 'bg-gray-100 text-gray-800', 
-  4: 'bg-red-100 text-red-800', 
-  5: 'bg-yellow-100 text-yellow-800' 
+const WorkItemTypeColors: Record<number, string> = {
+  0: 'bg-purple-100 text-purple-800',
+  1: 'bg-blue-100 text-blue-800',
+  2: 'bg-green-100 text-green-800',
+  3: 'bg-gray-100 text-gray-800',
+  4: 'bg-red-100 text-red-800',
+  5: 'bg-yellow-100 text-yellow-800'
 };
 
 const tabs = ['Details', 'Comments', 'Activity'];
@@ -39,8 +39,9 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [parentItems, setParentItems] = useState<WorkItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
@@ -51,6 +52,8 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
     estimatedHours: '',
     assignedToId: '',
     parentId: '',
+    statusId: '',
+    isBlocked: false,
   });
   const { currentProject } = useProject();
   const { user } = useAuth();
@@ -58,7 +61,7 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
 
   const loadTicketData = useCallback(async () => {
     if (!currentProject || !workItem) return;
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
       const [commentsRes, attachmentsRes, activitiesRes] = await Promise.all([
         commentsApi.getAll(currentProject.id, workItem.id),
@@ -71,23 +74,27 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
     } catch (error) {
       console.error('Failed to load ticket data');
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   }, [currentProject, workItem]);
 
   useEffect(() => {
     if (isOpen && currentProject) {
       loadMembers();
+      loadStatuses();
       loadParentItems();
       if (workItem && !isCreating) {
+        const isBlocked = workItem.title.startsWith('[BLOCKED] ');
         setFormData({
-          title: workItem.title,
+          title: isBlocked ? workItem.title.substring(10) : workItem.title,
           description: workItem.description || '',
           type: workItem.type,
           priority: workItem.priority,
           estimatedHours: workItem.estimatedHours?.toString() || '',
           assignedToId: workItem.assignedToId?.toString() || '',
           parentId: workItem.parentId?.toString() || '',
+          statusId: workItem.statusId?.toString() || '',
+          isBlocked: isBlocked,
         });
         loadTicketData();
       } else {
@@ -106,6 +113,21 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
     }
   };
 
+  const loadStatuses = async () => {
+    if (!currentProject) return;
+    try {
+      const res = await workflowStatusesApi.getAll(currentProject.id);
+      setStatuses(res.data.sort((a, b) => a.order - b.order));
+
+      // Set default status for new items if not set
+      if (isCreating && !formData.statusId && res.data.length > 0) {
+        setFormData(prev => ({ ...prev, statusId: res.data[0].id.toString() }));
+      }
+    } catch (error) {
+      console.error('Failed to load statuses');
+    }
+  };
+
   const loadParentItems = async () => {
     if (!currentProject) return;
     try {
@@ -118,14 +140,16 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
   };
 
   const resetForm = () => {
-    setFormData({ 
-      title: '', 
-      description: '', 
-      type: WorkItemTypes.Task, 
-      priority: Priority.Medium, 
-      estimatedHours: '', 
+    setFormData({
+      title: '',
+      description: '',
+      type: WorkItemTypes.Task,
+      priority: Priority.Medium,
+      estimatedHours: '',
       assignedToId: '',
       parentId: defaultParentId?.toString() || '',
+      statusId: '',
+      isBlocked: false,
     });
     setComments([]);
     setAttachments([]);
@@ -141,10 +165,13 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
       return;
     }
 
+    const cleanTitle = formData.title.trim();
+    const finalTitle = formData.isBlocked ? `[BLOCKED] ${cleanTitle}` : cleanTitle;
+
     try {
       if (isCreating) {
         const response = await workItemsApi.create(currentProject.id, {
-          title: formData.title,
+          title: finalTitle,
           description: formData.description || undefined,
           type: formData.type,
           priority: formData.priority,
@@ -152,6 +179,7 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
           assignedToId: formData.assignedToId ? parseInt(formData.assignedToId) : undefined,
           parentId: formData.parentId ? parseInt(formData.parentId) : undefined,
         });
+
         for (const file of pendingFiles) {
           await attachmentsApi.upload(currentProject.id, response.data.id, file);
         }
@@ -160,13 +188,14 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
         onClose();
       } else if (workItem) {
         const response = await workItemsApi.update(currentProject.id, workItem.id, {
-          title: formData.title,
+          title: finalTitle,
           description: formData.description || undefined,
           type: formData.type,
           priority: formData.priority,
           estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
           assignedToId: formData.assignedToId ? parseInt(formData.assignedToId) : undefined,
           parentId: formData.parentId ? parseInt(formData.parentId) : 0,
+          statusId: formData.statusId ? parseInt(formData.statusId) : undefined,
         });
         for (const file of pendingFiles) {
           await attachmentsApi.upload(currentProject.id, workItem.id, file);
@@ -258,7 +287,7 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
-        
+
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200">
@@ -285,11 +314,10 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
                   key={tab}
                   onClick={() => setActiveTab(index)}
                   disabled={isCreating && index > 0}
-                  className={`py-2 px-3 text-sm font-medium border-b-2 ${
-                    activeTab === index
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } ${isCreating && index > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`py-2 px-3 text-sm font-medium border-b-2 ${activeTab === index
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    } ${isCreating && index > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-1.5">
                     {index === 0 && <DocumentTextIcon className="h-4 w-4" />}
@@ -322,7 +350,7 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
                       className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
-                  
+
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <RichTextEditor
@@ -353,7 +381,7 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
                         />
                       </div>
                     )}
-                    
+
                     {attachments.length > 0 && (
                       <ul className="mt-2 divide-y divide-gray-200 border border-gray-200 rounded-md">
                         {attachments.map((att) => (
@@ -380,6 +408,43 @@ export default function TicketModal({ isOpen, onClose, workItem, onUpdate, onCre
 
                 {/* Right column - Metadata (1/3 width) */}
                 <div className="space-y-4">
+                  {/* Status Dropdown */}
+                  {!isCreating && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={formData.statusId}
+                        onChange={(e) => setFormData({ ...formData, statusId: e.target.value })}
+                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        {statuses
+                          .filter(status => status.name !== 'Blocked')
+                          .map((status) => (
+                            <option key={status.id} value={status.id}>
+                              {status.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Blocked Toggle */}
+                  <div className="flex items-center justify-between bg-red-50 p-3 rounded-md border border-red-100">
+                    <div className="flex items-center gap-2">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
+                      <span className="text-sm font-medium text-red-700">Blocked</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isBlocked}
+                        onChange={(e) => setFormData({ ...formData, isBlocked: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                     <select

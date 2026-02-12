@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<Board> Boards => Set<Board>();
+    public DbSet<BoardColumn> BoardColumns => Set<BoardColumn>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -219,6 +221,38 @@ public class ApplicationDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.UploadedById)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Board
+        modelBuilder.Entity<Board>(entity =>
+        {
+            entity.HasQueryFilter(e => !e.IsDeleted);
+            entity.HasOne(e => e.Project)
+                  .WithMany()
+                  .HasForeignKey(e => e.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Owner)
+                  .WithMany()
+                  .HasForeignKey(e => e.OwnerId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // BoardColumn
+        modelBuilder.Entity<BoardColumn>(entity =>
+        {
+            entity.HasQueryFilter(e => !e.IsDeleted);
+            entity.HasOne(e => e.Board)
+                  .WithMany(b => b.Columns)
+                  .HasForeignKey(e => e.BoardId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Status)
+                  .WithMany()
+                  .HasForeignKey(e => e.StatusId)
+                  .OnDelete(DeleteBehavior.Restrict); // Don't waterfall delete columns if status is deleted (we might want to handle this manually or SetNull) -> Actually Restrict is safer, forcing board cleanup before status delete, OR Cascade if we want column removed when status is gone.
+                  // Status deletion logic in service handles check for items. 
+                  // If status is deleted, the board column pointing to it becomes invalid.
+                  // We should probably Cascade delete here if the status is hard deleted, but statuses are soft deleted.
+                  // Since BoardColumn also has IsDeleted (via BaseEntity), we should respect that.
         });
     }
 }

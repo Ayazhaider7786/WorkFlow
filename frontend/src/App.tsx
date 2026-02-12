@@ -21,6 +21,7 @@ import Sprints from './pages/Sprints';
 import FileTickets from './pages/FileTickets';
 import Activity from './pages/Activity';
 import Team from './pages/Team';
+import ProjectSettings from './pages/ProjectSettings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -57,11 +58,11 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
-      
+
       {/* Auth pages - redirect to projects if logged in */}
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
       <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
-      
+
       {/* Protected pages */}
       <Route path="/projects" element={<PrivateRoute><Projects /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
@@ -71,7 +72,8 @@ function AppRoutes() {
       <Route path="/file-tickets" element={<PrivateRoute><Layout><FileTickets /></Layout></PrivateRoute>} />
       <Route path="/activity" element={<PrivateRoute><Layout><Activity /></Layout></PrivateRoute>} />
       <Route path="/team" element={<PrivateRoute><Layout><Team /></Layout></PrivateRoute>} />
-      
+      <Route path="/settings" element={<PrivateRoute><Layout><ProjectSettings /></Layout></PrivateRoute>} />
+
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
